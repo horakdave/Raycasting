@@ -1,11 +1,10 @@
 import pygame
 import math
-from PIL import Image
 
 pygame.init()
 
 screen = pygame.display.set_mode((1600, 600))
-pygame.display.set_caption("Raycasting Map")
+pygame.display.set_caption("Raycasting Map Maker")
 
 screen_width = 800
 screen_height = 600
@@ -13,18 +12,13 @@ screen_height = 600
 player_pos = [400, 300]
 player_angle = 0
 ray_length = 200
-
-# Load and convert the image to grayscale
-image = Image.open(r'/home/martin/Desktop/Project-Raycasting/raycasting-map/map.png').convert('L')
-width, height = image.size
+player_radius = 10  # Radius of the player circle
 
 walls = []
-for y in range(height):
-    for x in range(width):
-        pixel = image.getpixel((x, y))
-        if pixel < 128:  # wall (black pixel)
-            walls.append([[x, y], [x+1, y]])  # This creates a horizontal line segment
-            print(f"Wall added at: {x}, {y}")
+
+# Variables for map making
+start_pos = None
+is_drawing = False
 
 # Main game loop
 is_running = True
@@ -55,6 +49,15 @@ while is_running:
                 is_up_pressed = False
             elif event.key == pygame.K_DOWN:
                 is_down_pressed = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left mouse button
+                if not is_drawing:
+                    start_pos = event.pos
+                    is_drawing = True
+                else:
+                    end_pos = event.pos
+                    walls.append([start_pos, end_pos])
+                    is_drawing = False
 
     if is_left_pressed:
         player_angle -= 1
@@ -62,26 +65,29 @@ while is_running:
         player_angle += 1
 
     if is_up_pressed:
-        player_pos[0] += 2 * math.cos(math.radians(player_angle))  # Move in the x-direction
-        player_pos[1] += 2 * math.sin(math.radians(player_angle))  # Move in the y-direction
+        player_pos[0] += 2 * math.cos(math.radians(player_angle))
+        player_pos[1] += 2 * math.sin(math.radians(player_angle))
 
     if is_down_pressed:
-        player_pos[0] += -2 * math.cos(math.radians(player_angle))  # Move in the x-direction
-        player_pos[1] += -2 * math.sin(math.radians(player_angle))  # Move in the y-direction
+        player_pos[0] -= 2 * math.cos(math.radians(player_angle))
+        player_pos[1] -= 2 * math.sin(math.radians(player_angle))
 
-    screen.fill((0, 0, 0))
+    screen.fill((0, 0, 0))  # Clear the screen
 
     # Draw walls
     for wall in walls:
         pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
 
-    num_rays = 20   # Maximum: 800
-                    # Minimum: 50
+    # Draw player
+    pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
+
+    # Raycasting logic
+    num_rays = 200
     ray_angle = 60 / num_rays
 
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
-        end_pos = [player_pos[0] + 1000 * math.cos(angle), player_pos[1] + 1000 * math.sin(angle)]
+        end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
         
         min_distance = float('inf')
         for wall in walls:
@@ -100,19 +106,20 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     if distance < min_distance:
                         min_distance = distance
-        
-        # Drawing the adjusted rays
-        end_pos = [player_pos[0] + min_distance * math.cos(angle), player_pos[1] + min_distance * math.sin(angle)]
-        pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos)
+                        end_pos = [intersection_x, intersection_y]
+
+        pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos, 2)
 
         # Render 3D view
-        slice_height = 30000 / (min_distance + 0.0001)  # Make sure there aint 0/0
+        slice_height = 30000 / (min_distance + 0.0001)  # Avoid division by zero
         brightness = 255 - min(min_distance * 0.5, 255)
         color = (brightness, brightness, brightness)
         slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), (screen_height - slice_height) / 2, screen_width / num_rays, slice_height)
         pygame.draw.rect(screen, color, slice_rect)
 
-    pygame.draw.circle(screen, (255, 0, 0), (int(player_pos[0]), int(player_pos[1])), 5)
+    if is_drawing:
+        current_mouse_pos = pygame.mouse.get_pos()
+        pygame.draw.line(screen, (255, 0, 0), start_pos, current_mouse_pos, 2)
 
     pygame.display.flip()
 
