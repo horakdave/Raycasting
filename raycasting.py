@@ -72,7 +72,7 @@ while is_running:
     for wall in walls:
         pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
 
-    num_rays = 60
+    num_rays = 20
     ray_angle = 60 / num_rays
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)

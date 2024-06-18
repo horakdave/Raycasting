@@ -12,7 +12,7 @@ screen_height = 600
 player_pos = [400, 300]
 player_angle = 0
 ray_length = 200
-player_radius = 10  # Radius of the player circle
+player_radius = 5
 
 walls = []
 
