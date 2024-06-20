@@ -45,7 +45,7 @@ def check_ray_cube_intersection(ray_origin, ray_vector, cube_min, cube_max):
     intersection_point = ray_origin + ray_vector * t_near
     return True, intersection_point
 
-def lidar_scan(center, cube_min, cube_max, num_rays=36, max_distance=10):
+def lidar_scan(center, cube_min, cube_max, num_rays=360, max_distance=10):
     angle_step = 360 / num_rays
     points = []
     rad_angles = np.radians(np.arange(0, 360, angle_step))
@@ -53,18 +53,15 @@ def lidar_scan(center, cube_min, cube_max, num_rays=36, max_distance=10):
 
     for ray_vector in ray_vectors:
         ray_origin = np.array(center)
-        for distance in np.linspace(0, max_distance, num=int(max_distance * 10)):
-            point = ray_origin + ray_vector * distance
-            result = check_ray_cube_intersection(ray_origin, ray_vector, cube_min, cube_max)
-            if result[0]:
-                points.append(result[1])
-                break  # Stop after first intersection
+        result = check_ray_cube_intersection(ray_origin, ray_vector, cube_min, cube_max)
+        if result[0]:
+            points.append(result[1])
 
     glColor3f(1.0, 0.0, 0.0)  # Set color to red
     glPointSize(5)  # Set point size
     glBegin(GL_POINTS)
     for point in points:
-        glVertex3f(*point)
+        glVertex3fv(point)
     glEnd()
 
 def main():
@@ -100,10 +97,11 @@ def main():
         glPushMatrix()
         glTranslatef(*start_position)
         glRotatef(lidar_angle, 0, 0, 1)
+        
         draw_cube()
-        glPopMatrix()
-
         lidar_scan(start_position, cube_min, cube_max, 360, 10)
+        
+        glPopMatrix()
         
         pygame.display.flip()
         pygame.time.wait(10)
