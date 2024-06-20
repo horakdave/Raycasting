@@ -7,14 +7,14 @@ pygame.init()
 
 # Set up the display
 screen = pygame.display.set_mode((400, 400))
-pygame.display.set_caption("Map with Player and Cube")
+pygame.display.set_caption("Map with Player and Square")
 
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Player and Cube positions
+# Player and Square positions
 player_pos = [50, 50]
 cube_pos = (150, 50)
 
@@ -51,8 +51,8 @@ while True:
 
     # Draw the map with entities
     screen.fill(WHITE)
-    pygame.draw.rect(screen, BLACK, (player_pos[0], player_pos[1], 50, 50))  # Player
-    pygame.draw.rect(screen, BLACK, (cube_pos[0], cube_pos[1], 50, 50))  # Cube
+    pygame.draw.circle(screen, BLACK, (int(player_pos[0]), int(player_pos[1])), 25)  # Player as a circle
+    pygame.draw.rect(screen, BLACK, pygame.Rect(cube_pos[0]-25, cube_pos[1]-25, 50, 50))  # Square entity
 
     # Draw player's vision rays
     for i in range(num_rays):
