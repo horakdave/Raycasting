@@ -1,85 +1,55 @@
 import pygame
-from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GLU import *
-import numpy as np
+import sys
 import math
 
-# Define the vertices of a cube
-vertices = [
-    [1, -1, -1],
-    [1, 1, -1],
-    [-1, 1, -1],
-    [-1, -1, -1],
-    [1, -1, 1],
-    [1, 1, 1],
-    [-1, -1, 1],
-    [-1, 1, 1]
-]
+# Initialize Pygame
+pygame.init()
 
-# Define the edges of the cube
-edges = [
-    [0, 1],
-    [1, 2],
-    [2, 3],
-    [3, 0],
-    [4, 5],
-    [5, 6],
-    [6, 7],
-    [7, 4],
-    [0, 4],
-    [1, 5],
-    [2, 6],
-    [3, 7]
-]
+# Set up the display
+screen = pygame.display.set_mode((400, 400))
+pygame.display.set_caption("Map with Player and Cube")
 
-# Draw the cube
-def draw_cube():
-    glBegin(GL_LINES)
-    for edge in edges:
-        for vertex in edge:
-            glVertex3fv(vertices[vertex])
-    glEnd()
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
-# Main function to initialize Pygame and OpenGL
-def main():
-    pygame.init()
-    display = (800, 600)
-    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    
-    glEnable(GL_DEPTH_TEST)  # Enable depth testing here
-    
-    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    
-    glTranslatef(0.0, 0.0, -10)  # Move the camera back along the z-axis
-    
-    # Camera position
-    camera_x, camera_y, camera_z = 0, 0, 0  # Initialize camera at the center of the cube
-    
-    # Remove the rotation from the main loop to prevent spinning
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    camera_x -= 0.1
-                elif event.key == pygame.K_RIGHT:
-                    camera_x += 0.1
-                elif event.key == pygame.K_UP:
-                    camera_z += 0.1
-                elif event.key == pygame.K_DOWN:
-                    camera_z -= 0.1
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        
-        glLoadIdentity()  # Reset the view matrix
-        gluLookAt(camera_x, camera_y, camera_z, 0, 0, 0, 0, 1, 0)  # Set the camera position
-        
-        draw_cube()
-        
-        pygame.display.flip()
-        pygame.time.wait(10)
+# Player and Cube positions
+player_pos = [50, 50]
+cube_pos = (150, 50)
 
-main()
+# Player movement speed
+player_speed = 0.175
+
+# Player vision angle
+vision_angle = 60  # in degrees
+
+# Main loop
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        player_pos[0] -= player_speed
+    if keys[pygame.K_RIGHT]:
+        player_pos[0] += player_speed
+    if keys[pygame.K_UP]:
+        player_pos[1] -= player_speed
+    if keys[pygame.K_DOWN]:
+        player_pos[1] += player_speed
+
+    # Draw the map with entities
+    screen.fill(WHITE)
+    pygame.draw.rect(screen, BLACK, (player_pos[0], player_pos[1], 50, 50))  # Player
+    pygame.draw.rect(screen, BLACK, (cube_pos[0], cube_pos[1], 50, 50))  # Cube
+
+    # Draw player's vision cone
+    vision_radius = 100
+    start_angle = math.radians(-vision_angle / 2)
+    end_angle = math.radians(vision_angle / 2)
+    pygame.draw.arc(screen, RED, (player_pos[0] - vision_radius, player_pos[1] - vision_radius, 2 * vision_radius, 2 * vision_radius), start_angle, end_angle, 3)
+
+    pygame.display.flip()
