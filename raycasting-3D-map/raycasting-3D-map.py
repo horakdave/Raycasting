@@ -2,70 +2,109 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-import math
 import numpy as np
+import math
 
-def load_obj(filename):
-    vertices = []
-    faces = []
-    with open(filename, 'r') as file:
-        for line in file:
-            if line.startswith('v '):
-                vertices.append(tuple(map(float, line.strip().split()[1:])))
-            elif line.startswith('f'):
-                face = [int(i.split('/')[0]) - 1 for i in line.strip().split()[1:]]
-                faces.append(face)
-    return vertices, faces
-
-def draw_model(vertices, faces):
-    glBegin(GL_TRIANGLES)
-    for face in faces:
-        for vertex in face:
+def draw_cube():
+    vertices = [
+        [1, 1, -1],
+        [1, -1, -1],
+        [-1, -1, -1],
+        [-1, 1, -1],
+        [1, 1, 1],
+        [1, -1, 1],
+        [-1, -1, 1],
+        [-1, 1, 1]
+    ]
+    
+    edges = [
+        (0, 1), (1, 2), (2, 3), (3, 0),
+        (4, 5), (5, 6), (6, 7), (7, 4),
+        (0, 4), (1, 5), (2, 6), (3, 7)
+    ]
+    
+    glColor3f(1.0, 1.0, 1.0)  # Set color to white
+    glBegin(GL_LINES)
+    for edge in edges:
+        for vertex in edge:
             glVertex3fv(vertices[vertex])
     glEnd()
 
-def lidar_scan(center, vertices, faces, num_rays=360, max_distance=10): # Lidar scan sim
+def check_ray_cube_intersection(ray_origin, ray_vector, cube_min, cube_max):
+    t_min = (cube_min - ray_origin) / ray_vector
+    t_max = (cube_max - ray_origin) / ray_vector
+    
+    t1 = np.minimum(t_min, t_max)
+    t2 = np.maximum(t_min, t_max)
+    
+    t_near = np.max(t1)
+    t_far = np.min(t2)
+    
+    if t_near > t_far or t_far < 0:
+        return False, None
+    intersection_point = ray_origin + ray_vector * t_near
+    return True, intersection_point
+
+def lidar_scan(center, cube_min, cube_max, num_rays=36, max_distance=10):
     angle_step = 360 / num_rays
-    for angle in np.arange(0, 360, angle_step):
-        rad = math.radians(angle)
-        for distance in np.linspace(0, max_distance, num=int(max_distance*10)):
-            x = center[0] + distance * math.cos(rad)
-            y = center[1] + distance * math.sin(rad)
-            z = center[2]
-            for face in faces:
-                v0, v1, v2 = vertices[face[0]], vertices[face[1]], vertices[face[2]]
-                # Implement ray-triangle intersection test heres
-                # If the ray intersects with the triangle defined by v0, v1, v2, visualize/record the intersection point
-                # Priklad: check_ray_triangle_intersection(ray_origin, ray_direction, v0, v1, v2)
-                # If intersection occurs, visualize or record the intersection point
-                glBegin(GL_POINTS)
-                glVertex3f(x, y, z)  # Visualize the LiDAR scan point
-                glEnd()
+    points = []
+    rad_angles = np.radians(np.arange(0, 360, angle_step))
+    ray_vectors = np.array([[math.cos(rad), math.sin(rad), 0] for rad in rad_angles])
+
+    for ray_vector in ray_vectors:
+        ray_origin = np.array(center)
+        for distance in np.linspace(0, max_distance, num=int(max_distance * 10)):
+            point = ray_origin + ray_vector * distance
+            result = check_ray_cube_intersection(ray_origin, ray_vector, cube_min, cube_max)
+            if result[0]:
+                points.append(result[1])
+                break  # Stop after first intersection
+
+    glColor3f(1.0, 0.0, 0.0)  # Set color to red
+    glPointSize(5)  # Set point size
+    glBegin(GL_POINTS)
+    for point in points:
+        glVertex3f(*point)
+    glEnd()
 
 def main():
     pygame.init()
     display = (800, 600)
-    pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
-    gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
-    glTranslatef(0, 0, -20)
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
+    glTranslatef(0.0, 0.0, -20)
 
-    vertices, faces = load_obj(r"C:\Users\horak\Documents\GitHub\Raycasting\raycasting-3D-map\map.obj")
-
-    start_position = (5, 0, 0) # of the LIDAR
+    cube_min = np.array([-1, -1, -1])
+    cube_max = np.array([1, 1, 1])
+    start_position = [5, 0, 0]  # Starting position of the LiDAR
+    lidar_angle = 0
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            elif event.type == KEYDOWN:
+                if event.key == K_LEFT:
+                    start_position[0] -= 0.5
+                elif event.key == K_RIGHT:
+                    start_position[0] += 0.5
+                elif event.key == K_UP:
+                    start_position[1] += 0.5
+                elif event.key == K_DOWN:
+                    start_position[1] -= 0.5
 
-        glRotatef(1, 3, 1, 1)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-        draw_model(vertices, faces)
+        lidar_angle += 1 % 360
 
-        # Starting pos
-        lidar_scan(start_position, vertices, faces, 360, 10)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glPushMatrix()
+        glTranslatef(*start_position)
+        glRotatef(lidar_angle, 0, 0, 1)
+        draw_cube()
+        glPopMatrix()
 
+        lidar_scan(start_position, cube_min, cube_max, 360, 10)
+        
         pygame.display.flip()
         pygame.time.wait(10)
 
