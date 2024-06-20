@@ -61,4 +61,53 @@ while True:
         end_y = player_pos[1] + ray_length * math.sin(angle)
         pygame.draw.line(screen, RED, player_pos, (end_x, end_y), 2)
 
+    player_plane_x = math.sin(player_direction)
+    player_plane_y = -math.cos(player_direction)
+
+    # Raycasting for 3D view
+    for i in range(screen.get_width()):
+        camera_x = 2 * i / screen.get_width() - 1  # Map screen space to camera space
+        ray_dir_x = math.cos(player_direction) + player_plane_x * camera_x
+        ray_dir_y = math.sin(player_direction) + player_plane_y * camera_x
+
+        # Calculate the position of the wall hit by the ray
+        map_x, map_y = player_pos[0], player_pos[1]
+        delta_dist_x = abs(1 / ray_dir_x)
+        delta_dist_y = abs(1 / ray_dir_y)
+        
+        step_x = 1 if ray_dir_x > 0 else -1
+        step_y = 1 if ray_dir_y > 0 else -1
+
+        side_dist_x = (map_x + 1 - player_pos[0]) * delta_dist_x
+        side_dist_y = (map_y + 1 - player_pos[1]) * delta_dist_y
+
+        hit = False
+        side = None
+
+        while not hit:
+            if side_dist_x < side_dist_y:
+                side_dist_x += delta_dist_x
+                map_x += step_x
+                side = 0
+            else:
+                side_dist_y += delta_dist_y
+                map_y += step_y
+                side = 1
+
+            if map[map_x][map_y] == 1:
+                hit = True
+
+        # Calculate distance to the wall
+        if side == 0:
+            perp_wall_dist = (map_x - player_pos[0] + (1 - step_x) / 2) / ray_dir_x
+        else:
+            perp_wall_dist = (map_y - player_pos[1] + (1 - step_y) / 2) / ray_dir_y
+
+        # Calculate height of the wall slice to draw
+        line_height = int(screen.get_height() / perp_wall_dist)
+
+        # Draw the wall slice
+        wall_color = (255, 0, 0)  # Red wall color
+        pygame.draw.line(screen, wall_color, (i, screen.get_height() // 2 - line_height // 2), (i, screen.get_height() // 2 + line_height // 2))
+
     pygame.display.flip()
