@@ -1,113 +1,144 @@
 import pygame
-import sys
 import math
 
-# Initialize Pygame
 pygame.init()
 
-# Set up the display
-screen = pygame.display.set_mode((400, 400))
-pygame.display.set_caption("Map with Player and Square")
+screen = pygame.display.set_mode((1600, 600))
+pygame.display.set_caption("Raycasting Map Maker")
 
-# Colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
+screen_width = 800
+screen_height = 600
 
-# Player and Square positions
-player_pos = [50, 50]
-cube_pos = (150, 50)
+player_pos = [400, 300]
+player_angle = 0
+player_vert_angle = 0  # Added vertical angle for y-axis turning
+ray_length = 200
+player_radius = 5
 
-# Player movement speed
-player_speed = 0.175
+walls = []
 
-# Player vision angle
-vision_angle = 60  # in degrees
-num_rays = 30  # Number of rays for vision
-ray_length = 100  # Length of each ray
+# Variables for map making
+start_pos = None
+is_drawing = False
 
-# Initial player direction
-player_direction = 0
+# Main game loop
+is_running = True
+is_up_pressed = False
+is_left_pressed = False
+is_right_pressed = False
+is_down_pressed = False
+is_w_pressed = False
+is_s_pressed = False
 
-# Turning speed
-turning_speed = 0.175  # Adjust turning speed here
-
-# Main loop
-while True:
+while is_running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            is_running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                is_left_pressed = True
+            elif event.key == pygame.K_RIGHT:
+                is_right_pressed = True
+            elif event.key == pygame.K_UP:
+                is_up_pressed = True
+            elif event.key == pygame.K_DOWN:
+                is_down_pressed = True
+            elif event.key == pygame.K_w:
+                is_w_pressed = True
+            elif event.key == pygame.K_s:
+                is_s_pressed = True
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT:
+                is_left_pressed = False
+            elif event.key == pygame.K_RIGHT:
+                is_right_pressed = False
+            elif event.key == pygame.K_UP:
+                is_up_pressed = False
+            elif event.key == pygame.K_DOWN:
+                is_down_pressed = False
+            elif event.key == pygame.K_w:
+                is_w_pressed = False
+            elif event.key == pygame.K_s:
+                is_s_pressed = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left mouse button
+                if not is_drawing:
+                    start_pos = event.pos
+                    is_drawing = True
+                else:
+                    end_pos = event.pos
+                    walls.append([start_pos, end_pos])
+                    is_drawing = False
 
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        player_direction -= turning_speed  # Turn left
-    if keys[pygame.K_RIGHT]:
-        player_direction += turning_speed  # Turn right
+    if is_left_pressed:
+        player_angle -= 1
+    if is_right_pressed:
+        player_angle += 1
 
-    if keys[pygame.K_UP]:
-        player_pos[0] += player_speed * math.cos(math.radians(player_direction))
-        player_pos[1] += player_speed * math.sin(math.radians(player_direction))
+    if is_up_pressed:
+        player_pos[0] += 2 * math.cos(math.radians(player_angle))
+        player_pos[1] += 2 * math.sin(math.radians(player_angle))
 
-    # Draw the map with entities
-    screen.fill(WHITE)
-    pygame.draw.circle(screen, BLACK, (int(player_pos[0]), int(player_pos[1])), 25)  # Player as a circle
-    pygame.draw.rect(screen, BLACK, pygame.Rect(cube_pos[0]-25, cube_pos[1]-25, 50, 50))  # Square entity
+    if is_down_pressed:
+        player_pos[0] -= 2 * math.cos(math.radians(player_angle))
+        player_pos[1] -= 2 * math.sin(math.radians(player_angle))
 
-    # Draw player's vision rays
+    if is_w_pressed:
+        player_vert_angle = max(player_vert_angle - 1, -30)  # Limit vertical angle to -30 degrees
+    if is_s_pressed:
+        player_vert_angle = min(player_vert_angle + 1, 30)   # Limit vertical angle to 30 degrees
+
+    screen.fill((0, 0, 0))  # Clear the screen
+
+    # Draw walls
+    for wall in walls:
+        pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
+
+    # Draw player
+    pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
+
+    # Raycasting logic
+    num_rays = 200
+    ray_angle = 60 / num_rays
+
     for i in range(num_rays):
-        angle = math.radians(player_direction - vision_angle / 2 + (i / (num_rays - 1)) * vision_angle)
-        end_x = player_pos[0] + ray_length * math.cos(angle)
-        end_y = player_pos[1] + ray_length * math.sin(angle)
-        pygame.draw.line(screen, RED, player_pos, (end_x, end_y), 2)
-
-    player_plane_x = math.sin(player_direction)
-    player_plane_y = -math.cos(player_direction)
-
-    # Raycasting for 3D view
-    for i in range(screen.get_width()):
-        camera_x = 2 * i / screen.get_width() - 1  # Map screen space to camera space
-        ray_dir_x = math.cos(player_direction) + player_plane_x * camera_x
-        ray_dir_y = math.sin(player_direction) + player_plane_y * camera_x
-
-        # Calculate the position of the wall hit by the ray
-        map_x, map_y = player_pos[0], player_pos[1]
-        delta_dist_x = abs(1 / ray_dir_x)
-        delta_dist_y = abs(1 / ray_dir_y)
+        angle = math.radians(player_angle - 30 + i * ray_angle)
+        end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
         
-        step_x = 1 if ray_dir_x > 0 else -1
-        step_y = 1 if ray_dir_y > 0 else -1
+        min_distance = float('inf')
+        for wall in walls:
+            x1, y1 = wall[0]
+            x2, y2 = wall[1]
+            x3, y3 = player_pos
+            x4, y4 = end_pos
+            
+            den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+            if den != 0:
+                t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+                u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den
+                if 0 < t < 1 and u > 0:
+                    intersection_x = x1 + t * (x2 - x1)
+                    intersection_y = y1 + t * (y2 - y1)
+                    distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
+                    if distance < min_distance:
+                        min_distance = distance
+                        end_pos = [intersection_x, intersection_y]
 
-        side_dist_x = (map_x + 1 - player_pos[0]) * delta_dist_x
-        side_dist_y = (map_y + 1 - player_pos[1]) * delta_dist_y
+        pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos, 2)
 
-        hit = False
-        side = None
+        # Render 3D view
+        adjusted_distance = min_distance
+        slice_height = 30000 / (adjusted_distance + 0.0001)  # Avoid division by zero
+        brightness = 255 - min(adjusted_distance * 0.5, 255)
+        color = (brightness, brightness, brightness)
+        slice_y_offset = player_vert_angle * 10  # Adjust the offset based on vertical angle
+        slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), (screen_height - slice_height) / 2 + slice_y_offset, screen_width / num_rays, slice_height)
+        pygame.draw.rect(screen, color, slice_rect)
 
-        while not hit:
-            if side_dist_x < side_dist_y:
-                side_dist_x += delta_dist_x
-                map_x += step_x
-                side = 0
-            else:
-                side_dist_y += delta_dist_y
-                map_y += step_y
-                side = 1
-
-            if map[map_x][map_y] == 1:
-                hit = True
-
-        # Calculate distance to the wall
-        if side == 0:
-            perp_wall_dist = (map_x - player_pos[0] + (1 - step_x) / 2) / ray_dir_x
-        else:
-            perp_wall_dist = (map_y - player_pos[1] + (1 - step_y) / 2) / ray_dir_y
-
-        # Calculate height of the wall slice to draw
-        line_height = int(screen.get_height() / perp_wall_dist)
-
-        # Draw the wall slice
-        wall_color = (255, 0, 0)  # Red wall color
-        pygame.draw.line(screen, wall_color, (i, screen.get_height() // 2 - line_height // 2), (i, screen.get_height() // 2 + line_height // 2))
+    if is_drawing:
+        current_mouse_pos = pygame.mouse.get_pos()
+        pygame.draw.line(screen, (255, 0, 0), start_pos, current_mouse_pos, 2)
 
     pygame.display.flip()
+
+pygame.quit()
