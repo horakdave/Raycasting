@@ -15,7 +15,7 @@ player_vert_angle = 0   # Up and down
 player_z = 50           # Height
 ray_length = 200
 player_radius = 5
-fly_speed = 30
+fly_speed = 100
 
 walls = []
 
