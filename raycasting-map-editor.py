@@ -112,10 +112,10 @@ while is_running:
 
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
 
-    # Raycasting logic  AI helped:)
     num_rays = 200
     ray_angle = 60 / num_rays
-
+    
+    # Raycasting logic  AI helped:)
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
         end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
