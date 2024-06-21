@@ -11,14 +11,14 @@ screen_height = 600
 
 player_pos = [400, 300]
 player_angle = 0
-player_vert_angle = 0  # Vertical angle for looking up and down
-player_z = 50  # Player's height for flying
+player_vert_angle = 0   # Up and down
+player_z = 50           # Height
 ray_length = 200
 player_radius = 5
+fly_speed = 30
 
 walls = []
 
-# Variables for map making
 start_pos = None
 is_drawing = False
 
@@ -72,7 +72,7 @@ while is_running:
             elif event.key == pygame.K_LCTRL:
                 is_ctrl_pressed = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left mouse button
+            if event.button == 1:
                 if not is_drawing:
                     start_pos = event.pos
                     is_drawing = True
@@ -100,9 +100,9 @@ while is_running:
         player_vert_angle = max(player_vert_angle - 1, -30)  # Limit vertical angle to -30 degrees
 
     if is_space_pressed:
-        player_z += 2  # Move up
+        player_z -= fly_speed  # Move down faster
     if is_ctrl_pressed:
-        player_z -= 2  # Move down
+        player_z += fly_speed  # Move up faster
 
     screen.fill((0, 0, 0))  # Clear the screen
 
@@ -110,10 +110,9 @@ while is_running:
     for wall in walls:
         pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
 
-    # Draw player
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
 
-    # Raycasting logic
+    # Raycasting logic  AI helped:)
     num_rays = 200
     ray_angle = 60 / num_rays
 
@@ -142,13 +141,13 @@ while is_running:
 
         pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos, 2)
 
-        # Render 3D view
+        # Render 3D view    AI helped:)
         adjusted_distance = min_distance
         slice_height = 30000 / (adjusted_distance + 0.0001)  # Avoid division by zero
         brightness = 255 - min(adjusted_distance * 0.5, 255)
         color = (brightness, brightness, brightness)
 
-        # Calculate the vertical offset
+        # Calculate vertical ofset    AI helped:)  
         vertical_offset = player_z / (adjusted_distance + 0.0001)
         slice_height *= math.cos(math.radians(player_vert_angle))
         slice_y_offset = (screen_height / 2) - (slice_height / 2) - vertical_offset
