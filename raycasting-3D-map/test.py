@@ -11,8 +11,8 @@ screen_height = 600
 
 player_pos = [400, 300]
 player_angle = 0
-player_vert_angle = 0  # Vertical angle for looking up and down
-player_z = 50  # Player's height for flying
+player_vert_angle = 0   # Vertical angle for looking up and down
+player_z = 50           # Player's height for flying
 ray_length = 200
 player_radius = 5
 fly_speed = 100
@@ -101,9 +101,9 @@ while is_running:
         player_vert_angle = max(player_vert_angle - 1, -30)  # Limit vertical angle to -30 degrees
 
     if is_space_pressed:
-        player_z -= fly_speed  # Move down faster
+        player_z -= fly_speed  # Move down
     if is_ctrl_pressed:
-        player_z += fly_speed  # Move up faster
+        player_z += fly_speed  # Move up
 
     screen.fill((0, 0, 0))  # Clear the screen
 
@@ -114,10 +114,10 @@ while is_running:
     # Draw player
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
 
-    # Raycasting logic
     num_rays = 200
     ray_angle = 60 / num_rays
 
+    # Raycasting logic
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
         end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
@@ -139,7 +139,7 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     ray_intersections.append((distance, intersection_x, intersection_y))
 
-        ray_intersections.sort()
+        ray_intersections.sort(reverse=True)
         for distance, intersection_x, intersection_y in ray_intersections:
             end_pos = [intersection_x, intersection_y]
             adjusted_distance = distance
