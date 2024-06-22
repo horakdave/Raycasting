@@ -16,6 +16,7 @@ player_z = 50           # Player's height for flying
 ray_length = 200
 player_radius = 5
 fly_speed = 100
+view_line_length = 10  # Length of the direction line
 
 walls = []
 
@@ -114,6 +115,13 @@ while is_running:
     # Draw player
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
 
+    # Draw direction line
+    view_line_end_pos = (
+        player_pos[0] + view_line_length * math.cos(math.radians(player_angle)),
+        player_pos[1] + view_line_length * math.sin(math.radians(player_angle))
+    )
+    pygame.draw.line(screen, (255, 0, 0), player_pos, view_line_end_pos, 2)
+
     num_rays = 200
     ray_angle = 60 / num_rays
 
@@ -139,7 +147,7 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     ray_intersections.append((distance, intersection_x, intersection_y))
 
-        ray_intersections.sort(reverse=True)
+        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
         for distance, intersection_x, intersection_y in ray_intersections:
             end_pos = [intersection_x, intersection_y]
             adjusted_distance = distance
