@@ -11,15 +11,15 @@ screen_height = 600
 
 player_pos = [400, 300]
 player_angle = 0
-player_vert_angle = 0   # Vertical angle for looking up and down
-player_z = 50           # Player's height for flying
+player_vert_angle = 0   # Looking up/down
+player_z = 50
 ray_length = 200
 player_radius = 5
 fly_speed = 100
+view_line_length = 7.5
 
 walls = []
 
-# Variables for map making
 start_pos = None
 is_drawing = False
 
@@ -73,7 +73,7 @@ while is_running:
             elif event.key == pygame.K_LCTRL:
                 is_ctrl_pressed = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left mouse button
+            if event.button == 1:
                 if not is_drawing:
                     start_pos = event.pos
                     is_drawing = True
@@ -95,29 +95,34 @@ while is_running:
         player_pos[0] -= 2 * math.cos(math.radians(player_angle))
         player_pos[1] -= 2 * math.sin(math.radians(player_angle))
 
-    if is_w_pressed:
-        player_vert_angle = min(player_vert_angle + 1, 30)  # Limit vertical angle to 30 degrees
     if is_s_pressed:
-        player_vert_angle = max(player_vert_angle - 1, -30)  # Limit vertical angle to -30 degrees
+        player_vert_angle = min(player_vert_angle + 1, 30)
+    if is_w_pressed:
+        player_vert_angle = max(player_vert_angle - 1, -30)
 
     if is_space_pressed:
         player_z -= fly_speed  # Move down
     if is_ctrl_pressed:
         player_z += fly_speed  # Move up
 
-    screen.fill((0, 0, 0))  # Clear the screen
+    screen.fill((0, 0, 0))
 
     # Draw walls
     for wall in walls:
         pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
 
-    # Draw player
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
+
+    view_line_end_pos = (
+        player_pos[0] + view_line_length * math.cos(math.radians(player_angle)),
+        player_pos[1] + view_line_length * math.sin(math.radians(player_angle))
+    )
+    pygame.draw.line(screen, (255, 0, 0), player_pos, view_line_end_pos, 2)
 
     num_rays = 200
     ray_angle = 60 / num_rays
 
-    # Raycasting logic
+    # Raycasting logic  AI helped   :)
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
         end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
@@ -139,7 +144,7 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     ray_intersections.append((distance, intersection_x, intersection_y))
 
-        ray_intersections.sort(reverse=True)
+        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
         for distance, intersection_x, intersection_y in ray_intersections:
             end_pos = [intersection_x, intersection_y]
             adjusted_distance = distance
@@ -147,10 +152,10 @@ while is_running:
             brightness = 255 - min(adjusted_distance * 0.5, 255)
             color = (brightness, brightness, brightness)
 
-            # Calculate the vertical offset
+            # Calculate the vertical offset     AI helped   :)
             vertical_offset = player_z / (adjusted_distance + 0.0001)
             slice_height *= math.cos(math.radians(player_vert_angle))
-            slice_y_offset = (screen_height / 2) - (slice_height / 2) - vertical_offset
+            slice_y_offset = (screen_height / 2) - (slice_height / 2) - (player_vert_angle * 10) - vertical_offset
 
             slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), slice_y_offset, screen_width / num_rays, slice_height)
             pygame.draw.rect(screen, color, slice_rect)
