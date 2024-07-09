@@ -13,7 +13,7 @@ player_pos = [400, 300]
 player_angle = 0
 player_vert_angle = 0   # Looking up/down
 player_z = 50
-ray_length = 200
+ray_length = 1000
 player_radius = 5
 fly_speed = 100
 view_line_length = 7.5
@@ -145,6 +145,7 @@ while is_running:
                     ray_intersections.append((distance, intersection_x, intersection_y))
 
         ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
+
         for distance, intersection_x, intersection_y in ray_intersections:
             end_pos = [intersection_x, intersection_y]
             adjusted_distance = distance
@@ -159,6 +160,12 @@ while is_running:
 
             slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), slice_y_offset, screen_width / num_rays, slice_height)
             pygame.draw.rect(screen, color, slice_rect)
+
+            # Draw a yellow dot at the intersection point
+            pygame.draw.circle(screen, (255, 255, 0), (int(intersection_x), int(intersection_y)), 2)
+
+        # Draw the ray from player position to end_pos (or maximum ray length)
+        pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos, 1)
 
     if is_drawing:
         current_mouse_pos = pygame.mouse.get_pos()
