@@ -1,6 +1,12 @@
 import pygame
 import math
 
+print("Welcome to my 3D engine!")
+print("You can build walls with LMB")
+print("Adjust the height of the walls with I - Increase, D - Decrease")
+print("Space - Fly upwards, CTRL - Fly down")
+print("W - Look up, S - Look down")
+
 pygame.init()
 
 screen = pygame.display.set_mode((1600, 600))
