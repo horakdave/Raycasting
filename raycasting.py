@@ -22,6 +22,7 @@ walls = []
 
 start_pos = None
 is_drawing = False
+current_wall_height = 1  # Default wall height
 
 # Main game loop
 is_running = True
@@ -73,13 +74,14 @@ while is_running:
             elif event.key == pygame.K_LCTRL:
                 is_ctrl_pressed = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
+            if event.button in (1, 3):  # Left mouse button or right mouse button
                 if not is_drawing:
                     start_pos = event.pos
                     is_drawing = True
+                    current_wall_height = 2 if event.button == 3 else 1  # Right click creates taller wall
                 else:
                     end_pos = event.pos
-                    walls.append([start_pos, end_pos])
+                    walls.append([start_pos, end_pos, current_wall_height])
                     is_drawing = False
 
     if is_left_pressed:
@@ -131,6 +133,7 @@ while is_running:
         for wall in walls:
             x1, y1 = wall[0]
             x2, y2 = wall[1]
+            wall_height = wall[2]  # Wall height from the list
             x3, y3 = player_pos
             x4, y4 = end_pos
 
@@ -142,23 +145,26 @@ while is_running:
                     intersection_x = x1 + t * (x2 - x1)
                     intersection_y = y1 + t * (y2 - y1)
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
-                    ray_intersections.append((distance, intersection_x, intersection_y))
+                    ray_intersections.append((distance, intersection_x, intersection_y, wall_height))
 
         ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
 
-        for distance, intersection_x, intersection_y in ray_intersections:
+        for distance, intersection_x, intersection_y, wall_height in ray_intersections:
             end_pos = [intersection_x, intersection_y]
             adjusted_distance = distance
-            slice_height = 30000 / (adjusted_distance + 0.0001)  # Avoid division by zero
+            base_slice_height = 30000 / (adjusted_distance + 0.0001)  # Base slice height
+            adjusted_slice_height = base_slice_height * wall_height  # Adjust for wall height
             brightness = 255 - min(adjusted_distance * 0.5, 255)
             color = (brightness, brightness, brightness)
 
             # Calculate the vertical offset     AI helped   :)
             vertical_offset = player_z / (adjusted_distance + 0.0001)
-            slice_height *= math.cos(math.radians(player_vert_angle))
-            slice_y_offset = (screen_height / 2) - (slice_height / 2) - (player_vert_angle * 10) - vertical_offset
+            base_slice_height *= math.cos(math.radians(player_vert_angle))
+            adjusted_slice_height *= math.cos(math.radians(player_vert_angle))
+            slice_y_base = (screen_height / 2) - (base_slice_height / 2) - (player_vert_angle * 10) - vertical_offset
+            slice_y_offset = slice_y_base - (adjusted_slice_height - base_slice_height) / 2  # Adjust upwards only
 
-            slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), slice_y_offset, screen_width / num_rays, slice_height)
+            slice_rect = pygame.Rect(screen_width + i * (screen_width / num_rays), slice_y_base - adjusted_slice_height, screen_width / num_rays, adjusted_slice_height)
             pygame.draw.rect(screen, color, slice_rect)
 
             # Draw a yellow dot at the intersection point
