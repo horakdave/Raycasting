@@ -4,7 +4,7 @@ import math
 pygame.init()
 
 screen = pygame.display.set_mode((1600, 600))
-pygame.display.set_caption("Raycasting Map Maker")
+pygame.display.set_caption("Raycasting")
 
 screen_width = 800
 screen_height = 600
