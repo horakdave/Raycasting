@@ -1,5 +1,6 @@
 import pygame
 import math
+import time
 
 print("Welcome to my 3D engine!")
 print("You can build walls with LMB")
@@ -45,6 +46,10 @@ is_space_pressed = False
 is_ctrl_pressed = False
 is_increase_height_pressed = False
 is_decrease_height_pressed = False
+
+height_increment = 0.05  # Slower increment
+last_height_change_time = time.time()
+height_change_interval = 0.2  # 200 milliseconds
 
 while is_running:
     for event in pygame.event.get():
@@ -125,11 +130,14 @@ while is_running:
     if is_ctrl_pressed:
         player_z += fly_speed  # Move up
 
-    if is_increase_height_pressed:
-        current_wall_height += 1
+    current_time = time.time()
+    if is_increase_height_pressed and current_time - last_height_change_time > height_change_interval:
+        current_wall_height += height_increment
+        last_height_change_time = current_time
 
-    if is_decrease_height_pressed:
-        current_wall_height = max(current_wall_height - 0.25, 0.25)  # Ensure wall height is at least 1
+    if is_decrease_height_pressed and current_time - last_height_change_time > height_change_interval:
+        current_wall_height = max(current_wall_height - height_increment, 0.25)  # Ensure wall height is at least 0.25
+        last_height_change_time = current_time
 
     screen.fill((0, 0, 0))
 
@@ -148,7 +156,7 @@ while is_running:
     num_rays = 200
     ray_angle = 60 / num_rays
 
-    # Raycasting logic  AI helped   :)
+    # Raycasting logic
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
         end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
@@ -171,7 +179,7 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     ray_intersections.append((distance, intersection_x, intersection_y, wall_height))
 
-        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
+        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest
 
         for distance, intersection_x, intersection_y, wall_height in ray_intersections:
             end_pos = [intersection_x, intersection_y]
@@ -181,7 +189,7 @@ while is_running:
             brightness = 255 - min(adjusted_distance * 0.5, 255)
             color = (brightness, brightness, brightness)
 
-            # Calculate the vertical offset     AI helped   :)
+            # Calculate the vertical offset
             vertical_offset = player_z / (adjusted_distance + 0.0001)
             base_slice_height *= math.cos(math.radians(player_vert_angle))
             adjusted_slice_height *= math.cos(math.radians(player_vert_angle))
@@ -202,7 +210,7 @@ while is_running:
         pygame.draw.line(screen, (255, 0, 0), start_pos, current_mouse_pos, 2)
 
     # Render and display the current wall height
-    height_text = font.render(f'Wall Height: {current_wall_height}', True, (255, 255, 255))
+    height_text = font.render(f'Wall Height: {current_wall_height:.2f}', True, (255, 255, 255))
     screen.blit(height_text, (10, 10))
 
     pygame.display.flip()
