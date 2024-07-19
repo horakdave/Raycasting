@@ -3,7 +3,7 @@ import math
 import time
 
 print("Welcome to my 3D engine!")
-print("You can build walls with LMB")
+print("You can build walls with LMB (vertical) and floors with RMB (horizontal)")
 print("Adjust the height of the walls with I - Increase, D - Decrease")
 print("Space - Fly upwards, CTRL - Fly down")
 print("W - Look up, S - Look down")
@@ -26,9 +26,11 @@ fly_speed = 100
 view_line_length = 7.5
 
 walls = []
+floors = []
 
 start_pos = None
 is_drawing = False
+is_drawing_floor = False
 current_wall_height = 1  # Default wall height
 
 # Font for displaying wall height
@@ -98,7 +100,7 @@ while is_running:
             elif event.key == pygame.K_d:
                 is_decrease_height_pressed = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button in (1, 3):  # Left mouse button or right mouse button
+            if event.button == 1:  # Left mouse button
                 if not is_drawing:
                     start_pos = event.pos
                     is_drawing = True
@@ -106,6 +108,14 @@ while is_running:
                     end_pos = event.pos
                     walls.append([start_pos, end_pos, current_wall_height])
                     is_drawing = False
+            elif event.button == 3:  # Right mouse button
+                if not is_drawing_floor:
+                    start_pos = event.pos
+                    is_drawing_floor = True
+                else:
+                    end_pos = event.pos
+                    floors.append([start_pos, end_pos, current_wall_height])
+                    is_drawing_floor = False
 
     if is_left_pressed:
         player_angle -= 1
@@ -141,9 +151,20 @@ while is_running:
 
     screen.fill((0, 0, 0))
 
-    # Draw walls
+    # Draw vertical walls
     for wall in walls:
         pygame.draw.line(screen, (0, 255, 0), wall[0], wall[1], 2)
+
+    # Draw horizontal walls (floors)
+    for floor in floors:
+        start, end, height = floor
+        points = [
+            (start[0], start[1]),
+            (end[0], start[1]),
+            (end[0], end[1]),
+            (start[0], end[1])
+        ]
+        pygame.draw.polygon(screen, (0, 0, 255), points)
 
     pygame.draw.circle(screen, (255, 255, 255), player_pos, player_radius)
 
@@ -208,6 +229,10 @@ while is_running:
     if is_drawing:
         current_mouse_pos = pygame.mouse.get_pos()
         pygame.draw.line(screen, (255, 0, 0), start_pos, current_mouse_pos, 2)
+    elif is_drawing_floor:
+        current_mouse_pos = pygame.mouse.get_pos()
+        # Draw the outline of the floor being drawn
+        pygame.draw.rect(screen, (0, 0, 255), (*start_pos, current_mouse_pos[0] - start_pos[0], current_mouse_pos[1] - start_pos[1]), 2)
 
     # Render and display the current wall height
     height_text = font.render(f'Wall Height: {current_wall_height:.2f}', True, (255, 255, 255))

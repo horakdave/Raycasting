@@ -1,5 +1,6 @@
 import pygame
 import math
+import time
 
 print("Welcome to my 3D engine!")
 print("You can build walls with LMB")
@@ -30,6 +31,9 @@ start_pos = None
 is_drawing = False
 current_wall_height = 1  # Default wall height
 
+# Font for displaying wall height
+font = pygame.font.SysFont(None, 36)
+
 # Main game loop
 is_running = True
 is_up_pressed = False
@@ -40,6 +44,12 @@ is_w_pressed = False
 is_s_pressed = False
 is_space_pressed = False
 is_ctrl_pressed = False
+is_increase_height_pressed = False
+is_decrease_height_pressed = False
+
+height_increment = 0.05  # Slower increment
+last_height_change_time = time.time()
+height_change_interval = 0.2  # 200 milliseconds
 
 while is_running:
     for event in pygame.event.get():
@@ -62,6 +72,10 @@ while is_running:
                 is_space_pressed = True
             elif event.key == pygame.K_LCTRL:
                 is_ctrl_pressed = True
+            elif event.key == pygame.K_i:  # Increase wall height
+                is_increase_height_pressed = True
+            elif event.key == pygame.K_d:  # Decrease wall height
+                is_decrease_height_pressed = True
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_LEFT:
                 is_left_pressed = False
@@ -79,12 +93,15 @@ while is_running:
                 is_space_pressed = False
             elif event.key == pygame.K_LCTRL:
                 is_ctrl_pressed = False
+            elif event.key == pygame.K_i:
+                is_increase_height_pressed = False
+            elif event.key == pygame.K_d:
+                is_decrease_height_pressed = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button in (1, 3):  # Left mouse button or right mouse button
                 if not is_drawing:
                     start_pos = event.pos
                     is_drawing = True
-                    current_wall_height = 2 if event.button == 3 else 1  # Right click creates taller wall
                 else:
                     end_pos = event.pos
                     walls.append([start_pos, end_pos, current_wall_height])
@@ -113,6 +130,15 @@ while is_running:
     if is_ctrl_pressed:
         player_z += fly_speed  # Move up
 
+    current_time = time.time()
+    if is_increase_height_pressed and current_time - last_height_change_time > height_change_interval:
+        current_wall_height += height_increment
+        last_height_change_time = current_time
+
+    if is_decrease_height_pressed and current_time - last_height_change_time > height_change_interval:
+        current_wall_height = max(current_wall_height - height_increment, 0.25)  # Ensure wall height is at least 0.25
+        last_height_change_time = current_time
+
     screen.fill((0, 0, 0))
 
     # Draw walls
@@ -130,7 +156,7 @@ while is_running:
     num_rays = 200
     ray_angle = 60 / num_rays
 
-    # Raycasting logic  AI helped   :)
+    # Raycasting logic
     for i in range(num_rays):
         angle = math.radians(player_angle - 30 + i * ray_angle)
         end_pos = [player_pos[0] + ray_length * math.cos(angle), player_pos[1] + ray_length * math.sin(angle)]
@@ -153,7 +179,7 @@ while is_running:
                     distance = math.sqrt((player_pos[0] - intersection_x) ** 2 + (player_pos[1] - intersection_y) ** 2)
                     ray_intersections.append((distance, intersection_x, intersection_y, wall_height))
 
-        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest (I was a dumbass right here)
+        ray_intersections.sort(reverse=True)  # Sort from farthest to nearest
 
         for distance, intersection_x, intersection_y, wall_height in ray_intersections:
             end_pos = [intersection_x, intersection_y]
@@ -163,7 +189,7 @@ while is_running:
             brightness = 255 - min(adjusted_distance * 0.5, 255)
             color = (brightness, brightness, brightness)
 
-            # Calculate the vertical offset     AI helped   :)
+            # Calculate the vertical offset
             vertical_offset = player_z / (adjusted_distance + 0.0001)
             base_slice_height *= math.cos(math.radians(player_vert_angle))
             adjusted_slice_height *= math.cos(math.radians(player_vert_angle))
@@ -180,8 +206,12 @@ while is_running:
         pygame.draw.line(screen, (255, 255, 255), player_pos, end_pos, 1)
 
     if is_drawing:
-        current_mouse_pos = pygame.mouse.get_pos()
+        current_mouse_pos = pygame.mouse.get_pos()  
         pygame.draw.line(screen, (255, 0, 0), start_pos, current_mouse_pos, 2)
+
+    # Render and display the current wall height
+    height_text = font.render(f'Wall Height: {current_wall_height:.2f}', True, (255, 255, 255))
+    screen.blit(height_text, (10, 10))
 
     pygame.display.flip()
 
