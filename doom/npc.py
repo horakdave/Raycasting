@@ -128,6 +128,7 @@ class NPC(AnimatedSprite):
         sin_a = math.sin(ray_angle)
         cos_a = math.cos(ray_angle)
 
+        # horizontals
         y_hor, dy = (y_map + 1, 1) if sin_a > 0 else (y_map - 1e-6, -1)
 
         depth_hor = (y_hor - oy) / sin_a
@@ -148,6 +149,7 @@ class NPC(AnimatedSprite):
             y_hor += dy
             depth_hor += delta_depth
 
+        # verticals
         x_vert, dx = (x_map + 1, 1) if cos_a > 0 else (x_map - 1e-6, -1)
 
         depth_vert = (x_vert - ox) / cos_a

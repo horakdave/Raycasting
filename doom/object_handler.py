@@ -58,17 +58,25 @@ class ObjectHandler:
 
     def spawn_npc(self):
         for i in range(self.enemies):
-                npc = choices(self.npc_types, self.weights)[0]
+            npc = choices(self.npc_types, self.weights)[0]
+            pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            while (pos in self.game.map.world_map) or (pos in self.restricted_area):
                 pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
-                while (pos in self.game.map.world_map) or (pos in self.restricted_area):
-                    pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
-                self.add_npc(npc(self.game, pos=(x + 0.5, y + 0.5)))
+            self.add_npc(npc(self.game, pos=(x + 0.5, y + 0.5)))
+
+    def spawn_cyber_demons(self, count):
+        for _ in range(count):
+            pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            while (pos in self.game.map.world_map) or (pos in self.restricted_area):
+                pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
+            self.add_npc(CyberDemonNPC(self.game, pos=(x + 0.5, y + 0.5)))
 
     def check_win(self):
         if not len(self.npc_positions):
             self.game.object_renderer.win()
             pg.display.flip()
             pg.time.delay(1500)
+            self.game.victory = True  # Set victory to True
             self.game.new_game()
 
     def update(self):

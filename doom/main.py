@@ -11,7 +11,6 @@ from weapon import *
 from sound import *
 from pathfinding import *
 
-
 class Game:
     def __init__(self):
         pg.init()
@@ -23,9 +22,11 @@ class Game:
         self.global_trigger = False
         self.global_event = pg.USEREVENT + 0
         pg.time.set_timer(self.global_event, 40)
+        self.victory = False  # New attribute to track victory
         self.new_game()
 
     def new_game(self):
+        self.victory = False  # Reset victory status
         self.map = Map(self)
         self.player = Player(self)
         self.object_renderer = ObjectRenderer(self)
@@ -35,6 +36,8 @@ class Game:
         self.sound = Sound(self)
         self.pathfinding = PathFinding(self)
         pg.mixer.music.play(-1)
+        if self.victory:  # Check if last game was won
+            self.object_handler.spawn_cyber_demons(69)  # Spawn 69 CyberDemons
 
     def update(self):
         self.player.update()
